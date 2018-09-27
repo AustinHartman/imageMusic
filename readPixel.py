@@ -3,20 +3,34 @@ import numpy as np
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 from collections import OrderedDict
+from PIL import Image
+
 
 # open and load image
-img = Image.open('anotherPainting.jpg')
-pix = img.load()
+def setImage(file):
+    img = Image.open(file)
+    size = img.size
+    if (size[0] * size[1] > 400):
+        img = img.resize((16, 16), Image.ANTIALIAS)
+    return img
+
+
+img = setImage('something.jpg')
 size = img.size
+pix = img.load()
 
 # Red: length of note
 # Green: frequency of note
 # Blue: loudness of note
 
 # takes in pixel frequency and determines the closest not ranging from c3-b4
-def getClosestFrequency(f):
+def getClosestFrequency(greenVal):
+    # can select different note freq array for diff range and/or flat sharp combo of notes
     note_frequencies = [131, 147, 165, 175, 196, 220, 247,
                         262, 294, 330, 349, 392, 440, 494]
+    #note_frequencies = [82, 87, 98, 110, 123, 131]
+    f = (greenVal/255)*(note_frequencies[-1]-note_frequencies[0]) + note_frequencies[0]
+
     prev = note_frequencies[0]
     for n in note_frequencies[1:]:
         if (f >= prev and f <= n):
@@ -59,9 +73,10 @@ def genWave(pix):
     # sample rate also not factored in due to its impact on freq, will reimplement differently
     noteLength = getNoteLength(r/255) # sample rate
     fs = 44100
-    f = getClosestFrequency( 370*(g/255) + 130) # the frequency of the signal
-    x = np.arange(fs) # the points on the x axis for plotting
+    f = getClosestFrequency(g) # the frequency of the signal
+    x = range(fs) # the points on the x axis for plotting
     stopHere = int(len(x) * noteLength)
+
     # compute the value (amplitude) of the sin wave at the for each sample
     ### WAVE EQUATIONS
     # Note: many of these equations alter the notes frequency... i think
@@ -76,8 +91,6 @@ def genWave(pix):
     # just dont use
     #s = [ 8000 * ( np.sin((2*np.pi*f * (i/fs)*25)) + np.sin(3*(2*np.pi*f * (i/fs))) + \
     #    np.sin(5*(2*np.pi*f * (i/fs))) ) for i in x]
-    #s = np.array(s)
-    #s = s.astype(np.int16)
     return s
 
 def show_info(aname, a):
@@ -98,8 +111,11 @@ print("this might take a few minutes...")
 
 data = []
 # traverse the img pixel by pixel left to right
+i = 1
 for w in range(size[0]):
     for h in range(size[1]):
+        print(i)
+        i+=1
         data = data + genWave(pix[w,h])
 
 data = np.array(data)
@@ -107,4 +123,4 @@ data = data.astype(np.int16)
 
 show_info("data", data)
 wavfile.write('testLen.wav', 44100, data)
-drawGraph(data, "testLen.png")
+drawGraph(data[:100], "testLen.png")
