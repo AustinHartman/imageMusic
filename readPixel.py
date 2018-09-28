@@ -15,9 +15,30 @@ def setImage(file):
     return img
 
 
+def pixAvg(size, pix, w, h):
+    sum = 1
+    res = list(pix[w, h])
+    if (w < 15):
+        sum += 1
+        res = [x+y for x, y in zip(list(pix[w+1, h]), res)]
+    if (w > 0):
+        sum += 1
+        res = [x+y for x, y in zip(list(pix[w-1, h]), res)]
+    if (h < 15):
+        sum += 1
+        res = [x+y for x, y in zip(list(pix[w, h+1]), res)]
+    if (h > 0):
+        sum += 1
+        res = [x+y for x, y in zip(list(pix[w, h-1]), res)]
+
+    return tuple([i/sum for i in res])
+
+
+
 img = setImage('something.jpg')
 size = img.size
 pix = img.load()
+
 
 # Red: length of note
 # Green: frequency of note
@@ -116,11 +137,12 @@ for w in range(size[0]):
     for h in range(size[1]):
         print(i)
         i+=1
-        data = data + genWave(pix[w,h])
+        #p = pixAvg(size, pix, w, h)
+        data = data + genWave(pix[w, h])
 
 data = np.array(data)
 data = data.astype(np.int16)
 
 show_info("data", data)
-wavfile.write('testLen.wav', 44100, data)
-drawGraph(data[:100], "testLen.png")
+wavfile.write('something.wav', 44100, data)
+drawGraph(data[:100], "something.png")
